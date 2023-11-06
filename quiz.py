@@ -4,6 +4,9 @@ from random import shuffle
 import os
 import sys
 
+py = sys.executable
+
+
 file = open('score.txt','w')
 root = Tk()
 root.title('IP Enigma')
@@ -147,15 +150,21 @@ def shuffler():
     if int(score) > 5:
         file.write(str(score))
         file.close()
+        os.system('%s %s' % (py, 'main_copy.py'))
         root.destroy()
         root.quit()
     elif int(lives) <=0:
         file.write(str(score))
         file.close()
+        os.system('%s %s' % (py, 'main_copy.py'))
+        root.destroy()
         root.quit()
     elif int(no_of_questions)>=10:
         file.write(str(score))
+        # os.system('%s %s' % (py, 'main_copy.py'))
         root.destroy()
+        os.system('%s %s' % (py, 'main_copy.py'))
+        root.quit()
         
 
 

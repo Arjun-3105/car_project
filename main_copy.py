@@ -13,6 +13,7 @@ bonus = int(k)
 
 print(k)
 
+#loading all assests
 
 music= pygame.mixer.music.load('sounds/bg.mp3')
 pygame.mixer.music.set_volume(0.3)
@@ -31,7 +32,7 @@ FINISH_MASK = pygame.mask.from_surface(FINISH)
 FINISH_POSITION = (130, 250)
 
 RED_CAR = scale_image(pygame.image.load("imgs/pitstop_car_1.png"), 0.035)
-GRN_CAR = scale_image(pygame.image.load("imgs/pitstop_car_19.png"), 0.04)
+CMP_CAR = scale_image(pygame.image.load("imgs/pitstop_car_19.png"), 0.04)
 
 WIDTH, HEIGHT = TRACK.get_width(), TRACK.get_height()
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -42,9 +43,9 @@ main_font = pygame.font.SysFont('comicsans',30)
 FPS = 60
 PATH = [(137, 51), (40, 165), (58, 462), (268, 720), (410, 693), (423, 503), (581, 493), (614, 707), (753, 714), (747, 534), (715, 359), (415, 354), (426, 255), (712, 240), (720, 67), (308, 77), (253, 304), (231, 433), (144, 338), (178, 259)]
 
-
+# a class to handle the information of the game
 class Info:
-    LEVELS =5
+    LEVELS =5  #max level
 
     def __init__(self,level=1):
         self.lvl = level
@@ -60,7 +61,7 @@ class Info:
         self.started = False
         self.level_start_time = 0
 
-    def game_fns(self):
+    def game_fns(self):  #checking game finsished
         return self.lvl > self.LEVELS
     
     def start(self):
@@ -70,14 +71,14 @@ class Info:
     def get_lvl_time(self):
         if not self.started:
             return 0
-        return round(time.time() - self.level_start_time)
+        return round(time.time() - self.level_start_time)  #returning the game time per lvl
 
 
 
 
 
 
-class AbstractCar:
+class AbstractCar:  #class to handle the generic behavior of both computer and player car
     def __init__(self, max_vel, rotation_vel):
         self.img = self.IMG
         self.max_vel = max_vel
@@ -85,15 +86,15 @@ class AbstractCar:
         self.rotation_vel = rotation_vel
         self.angle = 0
         self.x, self.y = self.START_POS
-        self.acceleration = 0.4 + bonus*0.5
+        self.acceleration = 0.1 + bonus*0.5
 
-    def rotate(self, left=False, right=False):
+    def rotate(self, left=False, right=False):  #checking rotation
         if left:
             self.angle += self.rotation_vel
         elif right:
             self.angle -= self.rotation_vel
 
-    def draw(self, win):
+    def draw(self, win):#putting rotated car on screen 
         blit_rotate_center(win, self.img, (self.x, self.y), self.angle)
 
     def move_forward(self):
@@ -112,7 +113,7 @@ class AbstractCar:
         self.y -= vertical
         self.x -= horizontal
 
-    def collide(self, mask, x=0, y=0):
+    def collide(self, mask, x=0, y=0):#checking collision with help of mask of track border with car
         car_mask = pygame.mask.from_surface(self.img)
         offset = (int(self.x - x), int(self.y - y))
         poi = mask.overlap(car_mask, offset)
@@ -124,15 +125,15 @@ class AbstractCar:
         self.vel = 0
 
 
-class PlayerCar(AbstractCar):
+class PlayerCar(AbstractCar):#class specific to player car
     IMG = RED_CAR
     START_POS = (180, 195)
 
-    def reduce_speed(self):
+    def reduce_speed(self):#physics to account for constant deceleration
         self.vel = max(self.vel - self.acceleration / 2, 0)
         self.move()
 
-    def bounce(self):
+    def bounce(self): #make the car jump back when touch the track border and play sound
         self.vel = -self.vel/8
         col_sound.play()
         self.move()
@@ -140,10 +141,11 @@ class PlayerCar(AbstractCar):
         
 
 
-def draw(win, images, player_car,computer_car,game_info):
+def draw(win, images, player_car,computer_car,game_info):  #to show all the images on the window
     for img, pos in images:
         win.blit(img, pos)
 
+    #showing information related to text at bottom hand corner
     time_txt = main_font.render(f"Level {game_info.lvl}",1,(255,255,255))
     win.blit(time_txt,(10,630))
 
@@ -161,8 +163,10 @@ def draw(win, images, player_car,computer_car,game_info):
     computer_car.draw(win)
     pygame.display.update()
 
-class ComputerCar(AbstractCar):
-    IMG = GRN_CAR
+
+
+class ComputerCar(AbstractCar):#class specific to computer car
+    IMG = CMP_CAR
     START_POS = (155,195)
 
     def __init__(self,max_vel,rotation_vel,path=[]):
@@ -172,7 +176,7 @@ class ComputerCar(AbstractCar):
         self.vel = max_vel
 
 
-    def draw_points(self,win):
+    def draw_points(self,win):  #assigning the points to to computer to follow
         for point in self.path:
             pygame.draw.circle(win,(255,0,0),point,5)
 
@@ -180,15 +184,15 @@ class ComputerCar(AbstractCar):
         super().draw(win)
         # self.draw_points(win)
 
-    def calculate_angle(self):
+    def calculate_angle(self):#checking angle at each point for the car to follow
         target_x, target_y = self.path[self.current_point]
         x_diff = target_x - self.x
         y_diff = target_y - self.y
 
         if y_diff ==0:
-            desired_radian_angle = math.pi/2
+            desired_radian_angle = math.pi/2 
         else:
-            desired_radian_angle = math.atan(x_diff/y_diff)
+            desired_radian_angle = math.atan(x_diff/y_diff) #at any arbitary point checking angle with the target point
 
         if target_y > self.y:
             desired_radian_angle+=math.pi
@@ -208,7 +212,7 @@ class ComputerCar(AbstractCar):
         target = self.path[self.current_point]
         rect = pygame.Rect(self.x,self.y, self.img.get_width(), self.img.get_height())
 
-        if rect.collidepoint(*target):
+        if rect.collidepoint(*target):  #checking if touching the points
             self.current_point +=1
 
 
@@ -224,12 +228,12 @@ class ComputerCar(AbstractCar):
 
     def nxt_lvl(self,level):
         self.reset()
-        self.vel = self.max_vel + (level - 1)*0.4
+        self.vel = self.max_vel + (level - 1)*0.4  #increasing velocity of computer car
         self.current_point = 0
 
 
 
-def move_player(player_car):
+def move_player(player_car):#assigning keys to move the player car
     keys = pygame.key.get_pressed()
     moved = False
 
@@ -249,7 +253,7 @@ def move_player(player_car):
         player_car.reduce_speed()
 
 
-def handle_collision(player,comp,info):
+def handle_collision(player,comp,info): #using mask to check for collision with border and finish line
     if player_car.collide(TRACK_BORDER_MASK) != None:
         
         player_car.bounce()
@@ -261,8 +265,8 @@ def handle_collision(player,comp,info):
         pygame.quit()
     player_finish_poi_collide = player_car.collide(FINISH_MASK, *FINISH_POSITION)
    
-    if player_finish_poi_collide != None:
-        if player_finish_poi_collide[1] == 0:
+    if player_finish_poi_collide != None: #not allowing the player car to g0 behind the finish line
+        if player_finish_poi_collide[1] == 0: #checking if player has touched finish line then implement bouce to prevent going backwards
             player_car.bounce()
         else:
             game_info.nxtlvl()
@@ -273,10 +277,12 @@ run = True
 clock = pygame.time.Clock()
 images = [(GRASS, (0, 0)), (TRACK, (0, 0)),
           (FINISH, FINISH_POSITION), (TRACK_BORDER, (0, 0))]
-player_car = PlayerCar(120, 8)
-computer_car = ComputerCar(6, 16,PATH)
+#instance of the all the classes
+player_car = PlayerCar(4, 8)
+computer_car = ComputerCar(2, 16,PATH)
 game_info = Info()
 
+#main loop constantly checking for updates on the map
 while run:
     clock.tick(FPS)
 
@@ -315,6 +321,7 @@ while run:
         text(WIN, main_font,'You WON!')
         pygame.time.wait(5000)
         game_info.reset()
+        pygame.quit()
         player_car.reset()
         computer_car.reset()
         
